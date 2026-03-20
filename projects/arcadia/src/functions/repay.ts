@@ -12,6 +12,13 @@ interface Props {
     amount: string;
 }
 
+/**
+ * Repays debt to an Arcadia lending pool from wallet tokens.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with transaction status and details
+ */
 export async function repay({ chainName, accountAddress, poolAddress, amount }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -19,7 +26,7 @@ export async function repay({ chainName, accountAddress, poolAddress, amount }: 
     }
 
     const { notify, evm } = options;
-    const { sendTransactions, getProvider, getAddress } = evm!;
+    const { sendTransactions, getProvider, getAddress } = evm;
     const wallet = await getAddress();
     const provider = getProvider(chainId);
 
@@ -55,9 +62,15 @@ export async function repay({ chainName, accountAddress, poolAddress, amount }: 
         }),
     });
 
-    await notify!(`Repaying ${amount} to lending pool...`);
-    const result = await sendTransactions({ chainId, account: wallet, transactions });
-    const txData = result.data[result.data.length - 1];
-
-    return toResult(`Repaid ${amount} to ${poolAddress} for account ${accountAddress}. ${txData.message}`);
+    try {
+        await notify(`Repaying ${amount} to lending pool...`);
+        const result = await sendTransactions({ chainId, account: wallet, transactions });
+        const txData = result.data[result.data.length - 1];
+        if ('isMultisig' in result && result.isMultisig) {
+            return toResult(txData.message);
+        }
+        return toResult(`Repaid ${amount} to ${poolAddress} for account ${accountAddress}. ${txData.message}`);
+    } catch (error) {
+        return toResult(`Failed to repay: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
 }

@@ -18,6 +18,13 @@ interface RepayResponse {
     tenderly_sim_status: string;
 }
 
+/**
+ * Sells account collateral to repay debt without needing wallet tokens.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with transaction status and details
+ */
 export async function deleverage({ chainName, accountAddress, tokenFrom, amount }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -25,7 +32,7 @@ export async function deleverage({ chainName, accountAddress, tokenFrom, amount 
     }
 
     const { notify, evm } = options;
-    const { sendTransactions, getProvider, getAddress } = evm!;
+    const { sendTransactions, getProvider, getAddress } = evm;
     const wallet = await getAddress();
     const provider = getProvider(chainId);
 
@@ -55,7 +62,7 @@ export async function deleverage({ chainName, accountAddress, tokenFrom, amount 
     const amountWei = parseUnits(amount, decimals);
     if (amountWei === 0n) return toResult('Amount must be greater than 0', true);
 
-    await notify!('Building deleverage transaction...');
+    await notify('Building deleverage transaction...');
     const result = await apiGet<RepayResponse>('/bundles/repay_calldata', {
         amount_in: amountWei.toString(),
         chain_id: chainId,
@@ -76,9 +83,15 @@ export async function deleverage({ chainName, accountAddress, tokenFrom, amount 
         data: calldata,
     };
 
-    await notify!('Waiting for transaction confirmation...');
-    const txResult = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
-    const txData = txResult.data[txResult.data.length - 1];
-
-    return toResult(`Deleveraged ${amount} from ${accountAddress}. ${txData.message}`);
+    try {
+        await notify('Waiting for transaction confirmation...');
+        const txResult = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
+        const txData = txResult.data[txResult.data.length - 1];
+        if ('isMultisig' in txResult && txResult.isMultisig) {
+            return toResult(txData.message);
+        }
+        return toResult(`Deleveraged ${amount} from ${accountAddress}. ${txData.message}`);
+    } catch (error) {
+        return toResult(`Failed to deleverage: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
 }

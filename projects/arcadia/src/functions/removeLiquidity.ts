@@ -17,6 +17,13 @@ interface DecreaseResponse {
     tenderly_sim_status: string;
 }
 
+/**
+ * Partially decreases liquidity from an existing LP position.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with transaction status and details
+ */
 export async function removeLiquidity({ chainName, accountAddress, assetAddress, assetId, adjustment }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -24,10 +31,10 @@ export async function removeLiquidity({ chainName, accountAddress, assetAddress,
     }
 
     const { notify, evm } = options;
-    const { sendTransactions, getAddress } = evm!;
+    const { sendTransactions, getAddress } = evm;
     const wallet = await getAddress();
 
-    await notify!('Building remove liquidity transaction...');
+    await notify('Building remove liquidity transaction...');
     const result = await apiGet<DecreaseResponse>('/bundles/decrease_liquidity', {
         chain_id: chainId,
         account_address: accountAddress,
@@ -46,9 +53,15 @@ export async function removeLiquidity({ chainName, accountAddress, assetAddress,
         data: calldata,
     };
 
-    await notify!('Waiting for transaction confirmation...');
-    const txResult = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
-    const txData = txResult.data[txResult.data.length - 1];
-
-    return toResult(`Removed liquidity from position #${assetId}. ${txData.message}`);
+    try {
+        await notify('Waiting for transaction confirmation...');
+        const txResult = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
+        const txData = txResult.data[txResult.data.length - 1];
+        if ('isMultisig' in txResult && txResult.isMultisig) {
+            return toResult(txData.message);
+        }
+        return toResult(`Removed liquidity from position #${assetId}. ${txData.message}`);
+    } catch (error) {
+        return toResult(`Failed to remove liquidity: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
 }

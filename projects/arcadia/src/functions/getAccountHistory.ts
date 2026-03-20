@@ -13,6 +13,13 @@ interface HistoricResponse {
     value_now: { timestamp: number; usd_value: number };
 }
 
+/**
+ * Retrieves historical account value over time for an Arcadia account.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted account value history
+ */
 export async function getAccountHistory({ chainName, accountAddress, days }: Props, _options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

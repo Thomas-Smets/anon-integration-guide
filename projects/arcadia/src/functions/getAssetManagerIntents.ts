@@ -15,6 +15,13 @@ const AUTOMATIONS = [
     { name: 'merkl_operator', description: 'Claims Merkl rewards and sends them to a reward recipient.' },
 ];
 
+/**
+ * Lists available asset manager automations.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted automation list
+ */
 export async function getAssetManagerIntents({ chainName }: Props, _options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

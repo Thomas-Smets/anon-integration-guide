@@ -9,6 +9,13 @@ interface Props {
     enabled?: boolean;
 }
 
+/**
+ * Encodes configuration args for the Merkl operator automation.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with encoded asset manager configuration
+ */
 export async function encodeMerklOperator({ chainName, rewardRecipient, enabled = true }: Props, _options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

@@ -10,6 +10,13 @@ interface Props {
     amount: string;
 }
 
+/**
+ * Withdraws ERC20 tokens from an Arcadia account to the wallet.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with transaction status and details
+ */
 export async function withdraw({ chainName, accountAddress, tokenAddress, amount }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -17,7 +24,7 @@ export async function withdraw({ chainName, accountAddress, tokenAddress, amount
     }
 
     const { notify, evm } = options;
-    const { sendTransactions, getProvider, getAddress } = evm!;
+    const { sendTransactions, getProvider, getAddress } = evm;
     const wallet = await getAddress();
     const provider = getProvider(chainId);
 
@@ -39,9 +46,15 @@ export async function withdraw({ chainName, accountAddress, tokenAddress, amount
         }),
     };
 
-    await notify!(`Withdrawing ${amount} tokens from Arcadia account...`);
-    const result = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
-    const txData = result.data[result.data.length - 1];
-
-    return toResult(`Withdrew ${amount} tokens from ${accountAddress}. ${txData.message}`);
+    try {
+        await notify(`Withdrawing ${amount} tokens from Arcadia account...`);
+        const result = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
+        const txData = result.data[result.data.length - 1];
+        if ('isMultisig' in result && result.isMultisig) {
+            return toResult(txData.message);
+        }
+        return toResult(`Withdrew ${amount} tokens from ${accountAddress}. ${txData.message}`);
+    } catch (error) {
+        return toResult(`Failed to withdraw: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
 }

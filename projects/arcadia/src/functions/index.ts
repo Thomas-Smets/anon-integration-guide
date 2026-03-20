@@ -1,3 +1,4 @@
+export { getProtocolDescription } from './getProtocolDescription';
 export { getWalletAccounts } from './getWalletAccounts';
 export { getAccountInfo } from './getAccountInfo';
 export { getAccountHistory } from './getAccountHistory';

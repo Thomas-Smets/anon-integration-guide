@@ -13,6 +13,13 @@ interface LeaderboardEntry {
     points_referred: number;
 }
 
+/**
+ * Retrieves the Arcadia points leaderboard.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted leaderboard data
+ */
 export async function getPointLeaderboard({ chainName }: Props, _options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -25,8 +32,8 @@ export async function getPointLeaderboard({ chainName }: Props, _options: Functi
         return toResult('No leaderboard data available.');
     }
 
-    const top = data.slice(0, 20);
+    const top = data.slice(0, 10);
     const lines = top.map((e, i) => `  #${i + 1} ${e.user_address}: ${e.total_points} pts`);
 
-    return toResult(`Arcadia Points Leaderboard (top ${top.length}):\n${lines.join('\n')}`);
+    return toResult(`Arcadia Points Leaderboard (top ${top.length} of ${data.length}):\n${lines.join('\n')}`);
 }

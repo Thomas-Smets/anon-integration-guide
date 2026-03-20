@@ -33,6 +33,13 @@ interface BundleResponse {
     tenderly_sim_status: string;
 }
 
+/**
+ * Closes an Arcadia account position by burning LP, swapping, and repaying debt atomically.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with transaction status and details
+ */
 export async function close({ chainName, accountAddress, receiveTokenAddress }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -40,7 +47,7 @@ export async function close({ chainName, accountAddress, receiveTokenAddress }: 
     }
 
     const { notify, evm } = options;
-    const { sendTransactions, getAddress } = evm!;
+    const { sendTransactions, getAddress } = evm;
     const wallet = await getAddress();
 
     const overview = await apiGet<AccountOverview>('/accounts/overview', { chain_id: chainId, account: accountAddress });
@@ -91,7 +98,7 @@ export async function close({ chainName, accountAddress, receiveTokenAddress }: 
         slippage: 100,
     };
 
-    await notify!('Building close position transaction...');
+    await notify('Building close position transaction...');
     const result = await apiPost<BundleResponse>('/bundles/calldata', body);
 
     if (result.tenderly_sim_status === 'false') {
@@ -104,9 +111,15 @@ export async function close({ chainName, accountAddress, receiveTokenAddress }: 
         data: calldata,
     };
 
-    await notify!('Waiting for transaction confirmation...');
-    const txResult = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
-    const txData = txResult.data[txResult.data.length - 1];
-
-    return toResult(`Position closed on ${accountAddress}. ${txData.message}`);
+    try {
+        await notify('Waiting for transaction confirmation...');
+        const txResult = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
+        const txData = txResult.data[txResult.data.length - 1];
+        if ('isMultisig' in txResult && txResult.isMultisig) {
+            return toResult(txData.message);
+        }
+        return toResult(`Position closed on ${accountAddress}. ${txData.message}`);
+    } catch (error) {
+        return toResult(`Failed to close position: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
 }

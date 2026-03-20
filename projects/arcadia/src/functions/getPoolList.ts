@@ -14,6 +14,13 @@ interface Pool {
     total_realised_liquidity_usd: number;
 }
 
+/**
+ * Lists Arcadia lending pools with APY, utilization, and TVL.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted pool list data
+ */
 export async function getPoolList({ chainName }: Props, _options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

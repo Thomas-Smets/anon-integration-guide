@@ -17,6 +17,13 @@ interface StakeResponse {
     tenderly_sim_status: string;
 }
 
+/**
+ * Stakes, unstakes, or claims rewards for an LP position.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with transaction status and details
+ */
 export async function stake({ chainName, accountAddress, action, assetAddress, assetId }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -28,12 +35,12 @@ export async function stake({ chainName, accountAddress, action, assetAddress, a
     }
 
     const { notify, evm } = options;
-    const { sendTransactions, getAddress } = evm!;
+    const { sendTransactions, getAddress } = evm;
     const wallet = await getAddress();
 
     const endpoint = action === 'claim' ? '/bundles/claim' : '/bundles/stake';
 
-    await notify!(`Building ${action} transaction...`);
+    await notify(`Building ${action} transaction...`);
     const result = await apiGet<StakeResponse>(endpoint, {
         chain_id: chainId,
         account_address: accountAddress,
@@ -51,10 +58,16 @@ export async function stake({ chainName, accountAddress, action, assetAddress, a
         data: calldata,
     };
 
-    await notify!('Waiting for transaction confirmation...');
-    const txResult = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
-    const txData = txResult.data[txResult.data.length - 1];
-
-    const labels: Record<string, string> = { stake: 'Staked', unstake: 'Unstaked', claim: 'Claimed rewards for' };
-    return toResult(`${labels[action]} position #${assetId}. ${txData.message}`);
+    try {
+        await notify('Waiting for transaction confirmation...');
+        const txResult = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
+        const txData = txResult.data[txResult.data.length - 1];
+        if ('isMultisig' in txResult && txResult.isMultisig) {
+            return toResult(txData.message);
+        }
+        const labels: Record<string, string> = { stake: 'Staked', unstake: 'Unstaked', claim: 'Claimed rewards for' };
+        return toResult(`${labels[action]} position #${assetId}. ${txData.message}`);
+    } catch (error) {
+        return toResult(`Failed to ${action}: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
 }

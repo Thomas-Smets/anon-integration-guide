@@ -35,6 +35,13 @@ interface BundleResponse {
     tenderly_sim_status: string;
 }
 
+/**
+ * Opens an LP position on Arcadia with atomic deposit, swap, and LP mint.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with transaction status and details
+ */
 export async function addLiquidity({ chainName, accountAddress, strategyId, tokenAddress, amount, leverage }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -42,7 +49,7 @@ export async function addLiquidity({ chainName, accountAddress, strategyId, toke
     }
 
     const { notify, evm } = options;
-    const { sendTransactions, getProvider, getAddress } = evm!;
+    const { sendTransactions, getProvider, getAddress } = evm;
     const wallet = await getAddress();
     const provider = getProvider(chainId);
 
@@ -107,7 +114,7 @@ export async function addLiquidity({ chainName, accountAddress, strategyId, toke
         slippage: 100,
     };
 
-    await notify!('Building add liquidity transaction...');
+    await notify('Building add liquidity transaction...');
     const result = await apiPost<BundleResponse>('/bundles/calldata', body);
 
     if (result.tenderly_sim_status === 'false') {
@@ -134,9 +141,15 @@ export async function addLiquidity({ chainName, accountAddress, strategyId, toke
         data: calldata,
     });
 
-    await notify!('Waiting for transaction confirmation...');
-    const txResult = await sendTransactions({ chainId, account: wallet, transactions });
-    const txData = txResult.data[txResult.data.length - 1];
-
-    return toResult(`LP position opened on strategy #${strategyId}. ${txData.message}`);
+    try {
+        await notify('Waiting for transaction confirmation...');
+        const txResult = await sendTransactions({ chainId, account: wallet, transactions });
+        const txData = txResult.data[txResult.data.length - 1];
+        if ('isMultisig' in txResult && txResult.isMultisig) {
+            return toResult(txData.message);
+        }
+        return toResult(`LP position opened on strategy #${strategyId}. ${txData.message}`);
+    } catch (error) {
+        return toResult(`Failed to add liquidity: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
 }

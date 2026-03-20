@@ -13,6 +13,13 @@ interface AccountSummary {
     numeraire: string;
 }
 
+/**
+ * Lists all Arcadia accounts owned by the connected wallet.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted account list
+ */
 export async function getWalletAccounts({ chainName }: Props, { evm: { getAddress } }: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

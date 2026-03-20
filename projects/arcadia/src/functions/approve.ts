@@ -10,6 +10,13 @@ interface Props {
     amount: string;
 }
 
+/**
+ * Approves an ERC20 token for spending by an Arcadia account or pool.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with transaction status and details
+ */
 export async function approve({ chainName, tokenAddress, spender, amount }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -17,7 +24,7 @@ export async function approve({ chainName, tokenAddress, spender, amount }: Prop
     }
 
     const { notify, evm } = options;
-    const { sendTransactions, getProvider, getAddress } = evm!;
+    const { sendTransactions, getProvider, getAddress } = evm;
     const wallet = await getAddress();
     const provider = getProvider(chainId);
 
@@ -42,9 +49,15 @@ export async function approve({ chainName, tokenAddress, spender, amount }: Prop
         }),
     };
 
-    await notify!(`Approving ${amount} tokens for ${spender}...`);
-    const result = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
-    const txData = result.data[result.data.length - 1];
-
-    return toResult(`Approved ${amount} of ${tokenAddress} for ${spender}. ${txData.message}`);
+    try {
+        await notify(`Approving ${amount} tokens for ${spender}...`);
+        const result = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
+        const txData = result.data[result.data.length - 1];
+        if ('isMultisig' in result && result.isMultisig) {
+            return toResult(txData.message);
+        }
+        return toResult(`Approved ${amount} of ${tokenAddress} for ${spender}. ${txData.message}`);
+    } catch (error) {
+        return toResult(`Failed to approve: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
 }

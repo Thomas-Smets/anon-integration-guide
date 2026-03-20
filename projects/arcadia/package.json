@@ -1,28 +1,38 @@
 {
-	"name": "@heyanon/project-arcadia",
-	"version": "1.0.0",
-	"license": "MIT",
-	"main": "dist/index.js",
-	"typings": "dist/index.d.ts",
-	"module": "dist/index.mjs",
-	"files": ["dist"],
-	"engines": {
-		"node": ">=18"
-	},
-	"scripts": {
-		"start": "tsup --watch",
-		"build": "tsup",
-		"test": "vitest --run",
-		"format": "prettier --write \"*/**/*.ts\""
-	},
-	"devDependencies": {
-		"tsup": "^8.0.0",
-		"typescript": "^5.7.3"
-	},
-	"dependencies": {
-		"@heyanon/sdk": "2.3.1",
-		"axios": "^1.7.0",
-		"viem": "^2.0.0",
-		"vitest": "^2.1.8"
-	}
+    "name": "@heyanon/project-arcadia",
+    "version": "0.1.0",
+    "license": "MIT",
+    "engines": {
+        "node": ">=18"
+    },
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "typings": "./dist/index.d.ts",
+    "publishConfig": {
+        "access": "public"
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "start": "tsup --watch",
+        "dev": "tsup --watch",
+        "build": "tsup",
+        "test": "vitest run",
+        "lint": "prettier --check .",
+        "prepare": "yarn build",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
+    },
+    "devDependencies": {
+        "prettier": "latest",
+        "tsup": "^8.0.0",
+        "typescript": "5.7.3",
+        "vitest": "2.1.8"
+    },
+    "dependencies": {
+        "@heyanon/sdk": "2.3.1",
+        "axios": "^1.7.0",
+        "viem": "^2.0.0"
+    }
 }

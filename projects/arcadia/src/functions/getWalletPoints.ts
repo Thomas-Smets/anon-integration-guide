@@ -11,6 +11,13 @@ interface PointsData {
     wallet_address: string;
 }
 
+/**
+ * Retrieves Arcadia points earned by the connected wallet.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted points data
+ */
 export async function getWalletPoints({ chainName }: Props, { evm: { getAddress } }: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

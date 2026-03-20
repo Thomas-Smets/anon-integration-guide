@@ -19,6 +19,13 @@ interface SwapResponse {
     tenderly_sim_status: string;
 }
 
+/**
+ * Swaps tokens within an Arcadia account using backend-routed optimal paths.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with transaction status and details
+ */
 export async function swap({ chainName, accountAddress, tokenFrom, tokenTo, amount }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -26,7 +33,7 @@ export async function swap({ chainName, accountAddress, tokenFrom, tokenTo, amou
     }
 
     const { notify, evm } = options;
-    const { sendTransactions, getProvider, getAddress } = evm!;
+    const { sendTransactions, getProvider, getAddress } = evm;
     const wallet = await getAddress();
     const provider = getProvider(chainId);
 
@@ -38,7 +45,7 @@ export async function swap({ chainName, accountAddress, tokenFrom, tokenTo, amou
     const amountWei = parseUnits(amount, decimals);
     if (amountWei === 0n) return toResult('Amount must be greater than 0', true);
 
-    await notify!('Building swap transaction...');
+    await notify('Building swap transaction...');
     const result = await apiGet<SwapResponse>('/bundles/swap_calldata', {
         amount_in: amountWei.toString(),
         chain_id: chainId,
@@ -58,9 +65,15 @@ export async function swap({ chainName, accountAddress, tokenFrom, tokenTo, amou
         data: calldata,
     };
 
-    await notify!('Waiting for transaction confirmation...');
-    const txResult = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
-    const txData = txResult.data[txResult.data.length - 1];
-
-    return toResult(`Swapped ${amount} tokens in ${accountAddress}. ${txData.message}`);
+    try {
+        await notify('Waiting for transaction confirmation...');
+        const txResult = await sendTransactions({ chainId, account: wallet, transactions: [tx] });
+        const txData = txResult.data[txResult.data.length - 1];
+        if ('isMultisig' in txResult && txResult.isMultisig) {
+            return toResult(txData.message);
+        }
+        return toResult(`Swapped ${amount} tokens in ${accountAddress}. ${txData.message}`);
+    } catch (error) {
+        return toResult(`Failed to swap: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
 }

@@ -8,6 +8,13 @@ interface Props {
     chainName: string;
 }
 
+/**
+ * Retrieves token balances for the connected wallet on supported Arcadia tokens.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted wallet balance data
+ */
 export async function getWalletBalances({ chainName }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

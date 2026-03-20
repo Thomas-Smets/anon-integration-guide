@@ -12,6 +12,13 @@ interface Props {
     enabled?: boolean;
 }
 
+/**
+ * Encodes configuration args for yield claimer coupled with CowSwap.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with encoded asset manager configuration
+ */
 export async function encodeYieldClaimerCowswap(
     { chainName, dexProtocol, sellTokens, buyToken, feeRecipient, enabled = true }: Props,
     _options: FunctionOptions,

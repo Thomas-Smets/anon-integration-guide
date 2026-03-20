@@ -7,6 +7,13 @@ interface Props {
     assets: string[];
 }
 
+/**
+ * Retrieves current USD prices for specific assets.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted asset price data
+ */
 export async function getAssetPrices({ chainName, assets }: Props, _options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

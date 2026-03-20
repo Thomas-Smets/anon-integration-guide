@@ -9,6 +9,13 @@ interface Props {
     spender: string;
 }
 
+/**
+ * Retrieves token allowances for a spender address.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted allowance data
+ */
 export async function getWalletAllowances({ chainName, spender }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

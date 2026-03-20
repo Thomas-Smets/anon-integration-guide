@@ -7,6 +7,13 @@ interface Props {
     accountAddress: string;
 }
 
+/**
+ * Retrieves PnL and yield data for an Arcadia account.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted PnL and yield data
+ */
 export async function getAccountPnl({ chainName, accountAddress }: Props, _options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -21,12 +28,14 @@ export async function getAccountPnl({ chainName, accountAddress }: Props, _optio
 
     const lines: string[] = [`Account: ${accountAddress}`];
 
-    if (pnl) {
-        lines.push(`PnL: ${JSON.stringify(pnl)}`);
+    if (pnl && typeof pnl === 'object') {
+        const p = pnl as Record<string, unknown>;
+        lines.push(`PnL: total=${p.total_pnl ?? 'N/A'}, realized=${p.realized_pnl ?? 'N/A'}, unrealized=${p.unrealized_pnl ?? 'N/A'}`);
     }
 
-    if (yieldData) {
-        lines.push(`Yield: ${JSON.stringify(yieldData)}`);
+    if (yieldData && typeof yieldData === 'object') {
+        const y = yieldData as Record<string, unknown>;
+        lines.push(`Yield earned: ${y.total_yield_usd ?? JSON.stringify(yieldData).slice(0, 200)}`);
     }
 
     return toResult(lines.join('\n'));

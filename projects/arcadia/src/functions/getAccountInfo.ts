@@ -17,6 +17,13 @@ interface AccountOverview {
     assets: Array<{ address: string; symbol: string; amount: string }>;
 }
 
+/**
+ * Retrieves detailed info for an Arcadia account including health factor, collateral, debt, and positions.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted account data
+ */
 export async function getAccountInfo({ chainName, accountAddress }: Props, _options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

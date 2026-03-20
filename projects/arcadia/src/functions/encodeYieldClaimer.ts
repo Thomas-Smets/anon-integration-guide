@@ -10,6 +10,13 @@ interface Props {
     enabled?: boolean;
 }
 
+/**
+ * Encodes configuration args for the standalone yield claimer automation.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with encoded asset manager configuration
+ */
 export async function encodeYieldClaimer({ chainName, dexProtocol, feeRecipient, enabled = true }: Props, _options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

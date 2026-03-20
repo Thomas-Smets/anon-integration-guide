@@ -12,6 +12,13 @@ interface Props {
     amount: string;
 }
 
+/**
+ * Deposits ERC20 tokens from wallet into an Arcadia account.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with transaction status and details
+ */
 export async function deposit({ chainName, accountAddress, tokenAddress, amount }: Props, options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {
@@ -19,7 +26,7 @@ export async function deposit({ chainName, accountAddress, tokenAddress, amount 
     }
 
     const { notify, evm } = options;
-    const { sendTransactions, getProvider, getAddress } = evm!;
+    const { sendTransactions, getProvider, getAddress } = evm;
     const wallet = await getAddress();
     const provider = getProvider(chainId);
 
@@ -54,9 +61,15 @@ export async function deposit({ chainName, accountAddress, tokenAddress, amount 
         }),
     });
 
-    await notify!(`Depositing ${amount} tokens into Arcadia account...`);
-    const result = await sendTransactions({ chainId, account: wallet, transactions });
-    const txData = result.data[result.data.length - 1];
-
-    return toResult(`Deposited ${amount} tokens into ${accountAddress}. ${txData.message}`);
+    try {
+        await notify(`Depositing ${amount} tokens into Arcadia account...`);
+        const result = await sendTransactions({ chainId, account: wallet, transactions });
+        const txData = result.data[result.data.length - 1];
+        if ('isMultisig' in result && result.isMultisig) {
+            return toResult(txData.message);
+        }
+        return toResult(`Deposited ${amount} tokens into ${accountAddress}. ${txData.message}`);
+    } catch (error) {
+        return toResult(`Failed to deposit: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
 }

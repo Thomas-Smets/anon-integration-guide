@@ -31,6 +31,13 @@ const GUIDES: Record<string, string> = {
     ].join(' '),
 };
 
+/**
+ * Retrieves a workflow guide on an Arcadia topic.
+ *
+ * @param props - Function parameters
+ * @param options - SDK function options (provider, signer, notifications)
+ * @returns Result with formatted guide content
+ */
 export async function getGuides({ chainName, topic }: Props, _options: FunctionOptions): Promise<FunctionReturn> {
     const chainId = resolveChain(chainName);
     if (!chainId) {

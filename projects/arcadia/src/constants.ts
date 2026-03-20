@@ -1,6 +1,9 @@
+import { EVM } from '@heyanon/sdk';
 import { Address } from 'viem';
 
-export const SUPPORTED_CHAINS = [8453] as const;
+const { ChainIds } = EVM.constants;
+
+export const SUPPORTED_CHAINS = [ChainIds.base] as const;
 
 export const FACTORY_ADDRESS: Address = '0xDa14Fdd72345c4d2511357214c5B89A919768e59';
 export const REGISTRY_ADDRESS: Address = '0xd0690557600eb8Be8391D1d97346e2aab5300d5f';
